@@ -1,0 +1,11 @@
+
+#parser.add_argument('--env_name',default='CartPole-v1',type=str)
+#parser.add_argument('--num_episodes',type=int)
+#parser.add_argument('--gamma',type=float)
+#parser.add_argument('--step_size',type=float)
+
+env_name: CartPole-v1
+num_episodes: 10
+network_name: BasicMLP
+gamma: 0.99 
+step_size: 0.01
