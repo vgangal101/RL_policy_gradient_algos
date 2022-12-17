@@ -14,6 +14,7 @@ class BasicMLP(nn.Module):
     
     def forward(self,x):
         x = self.linear1(x)
+        x = self.relu1(x)
         x = self.linear2(x)
         return F.softmax(x,dim=-1)
 
