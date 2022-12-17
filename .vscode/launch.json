@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "SGD Train REINFORCE",
+            "type": "python",
+            "request": "launch",
+            "program": "REINFORCE.py",
+            "console": "integratedTerminal",
+            "args": ["--config","config/CartPolev1_exper1_SGD_test.yml"],
+            "justMyCode": true
+        },
+        {
             "name": "Train REINFORCE",
             "type": "python",
             "request": "launch",

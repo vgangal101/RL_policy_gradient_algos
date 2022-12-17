@@ -19,6 +19,7 @@ def get_args():
     parser.add_argument('--num_timesteps',default=10000,type=int)
     parser.add_argument('--gamma',type=float)
     parser.add_argument('--step_size',type=float)
+    parser.add_argument('--optimizer',default='Adam',type=str)
 
     return parser.parse_args()
 
@@ -58,8 +59,12 @@ def train(params):
     policy_config = dict(network_name=params.network_name,obs_space=env.observation_space.shape,action_space=env.action_space.n)
     policy = Policy(policy_config)
 
-    optimizer = torch.optim.Adam(policy.network.parameters(),lr=step_size)
+    if params.optimizer == 'Adam':
+        optimizer = torch.optim.Adam(policy.network.parameters(),lr=step_size)
+    elif params.optimizer == 'SGD':
+        optimizer = torch.optim.SGD(policy.network.parameters(),lr=step_size)
 
+    
     eval_reward_perf = []
     train_rewards_perf = []
     for i in range(num_episodes):

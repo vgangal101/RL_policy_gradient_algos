@@ -1,0 +1,7 @@
+env_name: CartPole-v1
+num_episodes: 2000
+num_timesteps: 10000
+network_name: BasicMLP
+gamma: 0.99 
+step_size: 0.01
+optimizer: SGD
