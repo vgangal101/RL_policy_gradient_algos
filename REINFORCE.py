@@ -58,7 +58,7 @@ def train(params):
     policy_config = dict(network_name=params.network_name,obs_space=env.observation_space.shape,action_space=env.action_space.n)
     policy = Policy(policy_config)
 
-    optimizer = torch.optim.SGD(policy.network.parameters(),lr=step_size)
+    optimizer = torch.optim.Adam(policy.network.parameters(),lr=step_size)
 
     eval_reward_perf = []
     train_rewards_perf = []
