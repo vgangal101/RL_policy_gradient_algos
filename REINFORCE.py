@@ -24,14 +24,14 @@ def get_args():
 
 
 
-def plot_results(training_perf, evaluate_perf):
+def plot_results(training_perf):
     
     # plot the rewards
     fig, ax = plt.subplots()
     #training_perf_x = [i for i in range(len(training_perf))]
     #evaluate_perf_x = [i for i in range(len(evaluate_perf))]
     ax.plot(training_perf,'b',label='training rewards')
-    ax.plot(evaluate_perf,'r',label='evaluation rewards')
+    #ax.plot(evaluate_perf,'r',label='evaluation rewards')
     ax.legend()
     plt.savefig('rewards_over_training_eval.png')
     
@@ -42,7 +42,7 @@ storage_batch = namedtuple('storage_batch',['obs','action','reward'])
 
 def train(params):
     """
-    Train ONLY on cartpole or classic control tasks 
+    Train on cartpole or classic control tasks 
     """
 
     # initialize environment. using args 
@@ -89,13 +89,16 @@ def train(params):
             policy_loss.backward()
             optimizer.step()
 
-        if i % 5 == 0: 
-            reward_mean_performance = evaluate(env,policy,5)
-            print(f'episode {i} reward_perf={reward_mean_performance}')
-            eval_reward_perf.append(reward_mean_performance)
+        print(f'episode={i}  episode_reward={train_rewards_episode}')
+
+        # if i % 5 == 0: 
+        #     reward_mean_performance = evaluate(env,policy,5)
+        #     print(f'episode {i} reward_perf={reward_mean_performance}')
+        #     eval_reward_perf.append(reward_mean_performance)
             
-    torch.save(policy.network,'REINFORCE_model_weights.pth')
-    return train_rewards_episode, eval_reward_perf
+    #torch.save(policy.network,'REINFORCE_model_weights.pth')
+    #return train_rewards_episode, eval_reward_perf
+    return train_rewards_perf
 
 def evaluate(env,policy,num_episodes):
     rewards_perf = []
@@ -115,8 +118,8 @@ def evaluate(env,policy,num_episodes):
 
 def main():
     params = get_args()
-    train_rewards_perf, eval_rewards_perf = train(params)
-    plot_results(train_rewards_perf,eval_rewards_perf)
+    train_rewards_perf = train(params)
+    plot_results(train_rewards_perf)
 
 
 
