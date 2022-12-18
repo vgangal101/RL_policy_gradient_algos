@@ -51,7 +51,7 @@ def update_policy(policy_net, optimizer, rewards, log_prob_actions, gamma ):
         discounted_rewards.append(Gt)
         
     discounted_rewards = torch.tensor(discounted_rewards)
-    #discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-9) # normalize discounted rewards
+    discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-9) # normalize discounted rewards
 
     policy_gradient = []
     for log_prob, Gt in zip(log_prob_actions, discounted_rewards):
