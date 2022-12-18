@@ -40,6 +40,29 @@ def plot_results(training_perf):
 
 storage_batch = namedtuple('storage_batch',['obs','action','reward'])
 
+def update_policy(policy_net, optimizer, rewards, log_prob_actions, gamma ):
+    discounted_rewards = []
+    for t in range(len(rewards)):
+        Gt = 0 
+        pw = 0
+        for r in rewards[t:]:
+            Gt = Gt + gamma **pw * r
+            pw = pw + 1
+        discounted_rewards.append(Gt)
+        
+    discounted_rewards = torch.tensor(discounted_rewards)
+    #discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-9) # normalize discounted rewards
+
+    policy_gradient = []
+    for log_prob, Gt in zip(log_prob_actions, discounted_rewards):
+        policy_gradient.append(-log_prob * Gt)
+    
+    optimizer.zero_grad()
+    policy_gradient = torch.stack(policy_gradient).sum()
+    policy_gradient.backward()
+    optimizer.step()
+
+
 
 def train(params):
     """
@@ -69,30 +92,24 @@ def train(params):
     train_rewards_perf = []
     for i in range(num_episodes):
         obs = env.reset()
-        storage = []
+        #storage = []
         train_rewards_episode = 0
+        log_prob_actions = []
+        rewards = []
         for ts in range(num_timesteps):
-            action = policy.select_action(obs)
+            action, log_prob_action = policy.select_action(obs)
             next_obs, reward, done, info = env.step(action)
+            log_prob_actions.append(log_prob_action)
+            rewards.append(reward)
             train_rewards_episode += reward
-            storage.append(storage_batch(obs,action,reward))
+            
             obs = next_obs 
             if done: 
                 break
         train_rewards_perf.append(train_rewards_episode)
-        
-        for t, batch in enumerate(storage):
-            # compute RETURN
-            G = 0 
-            for k in range(t,len(storage)):
-                G += math.pow(gamma,k-t-1)  * storage[k].reward
 
-            # compute log prob of actions given state , neural net
-            log_state_action_value = policy.compute_log_prob_action(batch.obs,batch.action)
-            policy_loss = -1 * log_state_action_value * G 
-            optimizer.zero_grad()
-            policy_loss.backward()
-            optimizer.step()
+        update_policy(policy,optimizer,rewards,log_prob_actions,gamma)
+        
 
         print(f'episode={i}  episode_reward={train_rewards_episode}')
 

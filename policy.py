@@ -1,28 +1,20 @@
 import networks 
 import torch
+import numpy as np
 
 class Policy():
     def __init__(self,config):
+        self.num_actions = config['action_space']
         if config['network_name'] == 'BasicMLP': 
             self.network = networks.BasicMLP(config['obs_space'],config['action_space'])
         else: 
             return ValueError("Invalid network name")
         
-    def select_action(self,obs):
-        obs = torch.from_numpy(obs)
-        with torch.no_grad():
-            action_probs = self.network(obs)
-            action_distribution = torch.distributions.Categorical(action_probs)
-            action = action_distribution.sample()
-        return action.item()
-
-    def compute_log_prob_action(self,obs,action):
-        obs = torch.from_numpy(obs)
-        action_probs = self.network(obs)
-        action_distribution = torch.distributions.Categorical(action_probs)
-        log_action_prob = action_distribution.log_prob(torch.tensor([action]))
-        return log_action_prob 
-    
-
+    def select_action(self, state):
+        state = torch.from_numpy(state).float().unsqueeze(0)
+        probs = self.network(state)
+        highest_prob_action = np.random.choice(self.num_actions, p=np.squeeze(probs.detach().numpy()))
+        log_prob = torch.log(probs.squeeze(0)[highest_prob_action])
+        return highest_prob_action, log_prob
 
 
