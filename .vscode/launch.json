@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Train REINFORCE Baseline CartpoleV1 ",
+            "type": "python",
+            "request": "launch",
+            "program": "REINFORCE_baseline.py",
+            "console": "integratedTerminal",
+            "args": ["--config","config/REINFORCE_baseline_CartPoleV1.yml"],
+            "justMyCode": true
+        },
+        {
             "name": "Train REINFORCE Baseline CartpoleV0 ",
             "type": "python",
             "request": "launch",

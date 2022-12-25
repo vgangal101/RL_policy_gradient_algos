@@ -8,6 +8,7 @@ from networks import BasicMLP
 import math
 from policy import Policy
 from state_value_function import StateValueFunction
+from torch.nn import functional as F 
 
 
 
@@ -126,7 +127,7 @@ def update_policy(policy, state_value_func, policy_optimizer,
     state_values = torch.stack(state_val_tracker)
     
     with torch.no_grad():
-        temporal_diff_loss = (discounted_returns - state_values).sum()
+        temporal_diff_loss = (discounted_returns - state_values)
 
 
     # compute policy loss 
@@ -136,8 +137,16 @@ def update_policy(policy, state_value_func, policy_optimizer,
     total_policy_loss = policy_loss.sum()
 
     # compute state val loss 
-    state_val_loss = -1 * temporal_diff_loss * state_values 
-    total_state_val_loss = state_val_loss.sum()
+    #state_val_loss = -1 * temporal_diff_loss * state_values 
+    #total_state_val_loss = state_val_loss.sum()
+
+    #state_val_loss = F.mse_loss(discounted_returns,state_values.squeeze())
+    state_val_loss = (discounted_returns - state_values.squeeze()).sum()
+    #total_state_val_loss =  (temporal_diff_loss * state_val_loss).sum()
+
+
+
+
 
     # gradient ascent policy
     policy_optimizer.zero_grad()
@@ -147,7 +156,7 @@ def update_policy(policy, state_value_func, policy_optimizer,
     # gradient ascent state-value function
 
     state_value_optimizer.zero_grad()
-    total_state_val_loss.backward()
+    state_val_loss.backward()
     state_value_optimizer.step()
 
 
