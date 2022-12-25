@@ -38,7 +38,7 @@ def plot_results(training_perf):
     
     
 
-storage_batch = namedtuple('storage_batch',['obs','action','reward'])
+storage_batch = namedtuple('storage_batch',['obs','action','reward','log_prob_action'])
 
 
 def train(params):
@@ -65,61 +65,65 @@ def train(params):
         optimizer = torch.optim.SGD(policy.network.parameters(),lr=step_size)
 
     
-    eval_reward_perf = []
     train_rewards_perf = []
     for i in range(num_episodes):
         obs = env.reset()
-        storage = []
+        log_prob_action_tracker = []
+        rewards_tracker = []
         train_rewards_episode = 0
+
         for ts in range(num_timesteps):
-            action = policy.select_action(obs)
+            action, log_prob_action = policy.select_action(obs)
+            log_prob_action_tracker.append(log_prob_action)
             next_obs, reward, done, info = env.step(action)
+            obs = next_obs
+            
+            rewards_tracker.append(reward)
             train_rewards_episode += reward
-            storage.append(storage_batch(obs,action,reward))
-            obs = next_obs 
+            
             if done: 
                 break
         train_rewards_perf.append(train_rewards_episode)
         
-        for t, batch in enumerate(storage):
-            # compute RETURN
-            G = 0 
-            for k in range(t,len(storage)):
-                G += math.pow(gamma,k-t-1)  * storage[k].reward
-
-            # compute log prob of actions given state , neural net
-            log_state_action_value = policy.compute_log_prob_action(batch.obs,batch.action)
-            policy_loss = -1 * log_state_action_value * G 
-            optimizer.zero_grad()
-            policy_loss.backward()
-            optimizer.step()
+        update_policy(policy, optimizer, log_prob_action_tracker,rewards_tracker,gamma)
 
         print(f'episode={i}  episode_reward={train_rewards_episode}')
 
-        # if i % 5 == 0: 
-        #     reward_mean_performance = evaluate(env,policy,5)
-        #     print(f'episode {i} reward_perf={reward_mean_performance}')
-        #     eval_reward_perf.append(reward_mean_performance)
-            
-    #torch.save(policy.network,'REINFORCE_model_weights.pth')
-    #return train_rewards_episode, eval_reward_perf
+        
     return train_rewards_perf
 
-def evaluate(env,policy,num_episodes):
-    rewards_perf = []
-    for i in range(num_episodes):
-        obs = env.reset()
-        done = False 
-        episode_reward = 0 
-        while not done:
-            with torch.no_grad():
-                action = policy.select_action(obs)
-            next_obs, done, reward, info = env.step(action)
-            episode_reward += reward 
-            obs = next_obs  
-        rewards_perf.append(episode_reward)
+
+def update_policy(policy,optimizer,log_prob_action_tracker,rewards_tracker,gamma):
+
+    # compute discounted return for each timestep 
+    discounted_returns = []
+    for t, reward in enumerate(rewards_tracker):
+        Gt = 0 
+        power = 0
+        for reward in rewards_tracker[t:]:
+            Gt += reward * gamma ** power
+            power += 1 
+        discounted_returns.append(Gt)
+
+    discounted_returns = torch.tensor(discounted_returns)
+
+
+    # compute policy loss 
+    #policy_loss = -1 * log_prob_action_tracker * discounted_returns
+    policy_loss = []
+    for index, log_prob_action in enumerate(log_prob_action_tracker):
+        policy_loss.append(-1 * log_prob_action * discounted_returns[index])
+
+    policy_loss = torch.stack(policy_loss)
+    cumulative_policy_loss = policy_loss.sum()
     
-    return sum(rewards_perf) / len(rewards_perf)
+    optimizer.zero_grad()
+    cumulative_policy_loss.backward()
+    optimizer.step()
+ 
+    return 
+
+
 
 def main():
     params = get_args()
