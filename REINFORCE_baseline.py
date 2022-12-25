@@ -140,8 +140,8 @@ def update_policy(policy, state_value_func, policy_optimizer,
     #state_val_loss = -1 * temporal_diff_loss * state_values 
     #total_state_val_loss = state_val_loss.sum()
 
-    #state_val_loss = F.mse_loss(discounted_returns,state_values.squeeze())
-    state_val_loss = (discounted_returns - state_values.squeeze()).sum()
+    state_val_loss = F.mse_loss(discounted_returns,state_values.squeeze())
+    #state_val_loss = (discounted_returns - state_values.squeeze()).sum()
     #total_state_val_loss =  (temporal_diff_loss * state_val_loss).sum()
 
 
