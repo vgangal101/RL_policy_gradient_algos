@@ -14,12 +14,21 @@
             "justMyCode": true
         },
         {
-            "name": "Train REINFORCE",
+            "name": "Train REINFORCE CartpoleV0 ",
             "type": "python",
             "request": "launch",
             "program": "REINFORCE.py",
             "console": "integratedTerminal",
-            "args": ["--config","config/CartPolev1_exper1.yml"],
+            "args": ["--config","config/REINFORCE_CartPolev0_exp.yml"],
+            "justMyCode": true
+        },
+        {
+            "name": "Train REINFORCE Cartpolev1 ",
+            "type": "python",
+            "request": "launch",
+            "program": "REINFORCE.py",
+            "console": "integratedTerminal",
+            "args": ["--config","config/REINFORCE_CartPolev1_exper1.yml"],
             "justMyCode": true
         }
     ]
