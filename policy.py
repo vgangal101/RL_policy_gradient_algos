@@ -6,7 +6,7 @@ class Policy():
         if config['network_name'] == 'BasicMLP': 
             self.network = networks.BasicMLP(config['obs_space'],config['action_space'])
         else: 
-            return ValueError("Invalid network name")
+            raise ValueError("Invalid network name")
         
     def select_action(self,obs):
         obs = torch.from_numpy(obs)

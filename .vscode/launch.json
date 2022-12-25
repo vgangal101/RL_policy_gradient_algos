@@ -5,12 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "SGD Train REINFORCE",
+            "name": "Train REINFORCE Baseline CartpoleV0 ",
             "type": "python",
             "request": "launch",
-            "program": "REINFORCE.py",
+            "program": "REINFORCE_baseline.py",
             "console": "integratedTerminal",
-            "args": ["--config","config/CartPolev1_exper1_SGD_test.yml"],
+            "args": ["--config","config/REINFORCE_baseline_CartPoleV0.yml"],
             "justMyCode": true
         },
         {
