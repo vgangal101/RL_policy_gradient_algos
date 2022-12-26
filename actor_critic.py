@@ -76,7 +76,7 @@ def train(params):
         I = 1
         obs = env.reset()
         #log_prob_action_tracker = []
-        rewards_tracker = []
+        #rewards_tracker = []
         train_rewards_episode = 0
         #state_values_tracker = []
         for ts in range(num_timesteps):
@@ -84,13 +84,21 @@ def train(params):
             
             next_obs, reward, done, info = env.step(action)
             
-            state_val_current_obs = state_val_func.forward(obs)
-            state_val_next_obs = state_val_func.forward(next_obs)
+            current_state_val = state_val_func.forward(obs)
+            next_state_val = state_val_func.forward(next_obs)
 
-            delta = reward + gamma * state_val_next_obs - state_val_current_obs
+            if done: 
+                next_state_val = torch.tensor([0]) 
+                # do logic
+            
+            #state_val_loss = F.mse_loss(reward + gamma * next_state_val,state_val_func.forward(obs))
+            state_val_loss = F.mse_loss(reward + gamma * next_state_val, current_state_val)
+            #state_val_loss *= I 
+            
+            delta = reward + gamma * next_state_val.item() - current_state_val.item()
             
             policy_loss = -1 * log_prob_action * delta * I 
-            state_val_loss = F.mse_loss(reward + gamma * state_val_next_obs, state_val_current_obs)
+            #state_val_loss = F.mse_loss(reward + gamma * state_val_func.forward(next_obs), state_val_func.forward(obs))
 
             policy_optimizer.zero_grad()
             policy_loss.backward()
@@ -101,8 +109,9 @@ def train(params):
             state_value_optimizer.step()
 
             obs = next_obs
+            I *= gamma 
             
-            rewards_tracker.append(reward)
+            #rewards_tracker.append(reward)
             train_rewards_episode += reward
             
             if done: 
