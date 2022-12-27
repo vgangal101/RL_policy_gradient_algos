@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Train ActorCritic CartpoleV1",
+            "type": "python",
+            "request": "launch",
+            "program": "actor_critic.py",
+            "console": "integratedTerminal",
+            "args": ["--config","config/ActorCritic_CartPoleV1.yml"],
+            "justMyCode": true
+        },
+        {
             "name": "Train ActorCritic CartpoleV0",
             "type": "python",
             "request": "launch",
