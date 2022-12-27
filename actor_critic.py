@@ -1,3 +1,11 @@
+"""
+This is an implementation of the One-step actor-critic episodic algorithm. 
+pg.332 of Sutton&Barto textbook. 
+
+This is essentially an implementation of the A2C algorithm : Advantage Actor Critic algorithm.
+"""
+
+
 import jsonargparse
 import torch 
 import matplotlib.pyplot as plt 
