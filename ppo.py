@@ -29,6 +29,7 @@ def get_args():
 
 
 
+
 def train(params):
     """
     Train on cartpole or classic control tasks 
@@ -47,12 +48,17 @@ def train(params):
     policy_config = dict(network_name=params.network_name,obs_space=env.observation_space.shape,action_space=env.action_space.n)
     policy = Policy(policy_config)
 
-    if params.optimizer == 'Adam':
-        optimizer = torch.optim.Adam(policy.network.parameters(),lr=step_size)
-    elif params.optimizer == 'SGD':
-        optimizer = torch.optim.SGD(policy.network.parameters(),lr=step_size)
+    state_value_function_config = dict(network_name=params.network_name,obs_space=env.observation_space.shape,action_space=1,use_softmax=False)
+    state_val_func = StateValueFunction(state_value_function_config)
 
-    
+    if params.optimizer == 'Adam':
+        policy_optimizer = torch.optim.Adam(policy.network.parameters(),lr=params.policy_step_size)
+        state_value_optimizer = torch.optim.Adam(state_val_func.network.parameters(),lr=params.state_value_step_size)
+    elif params.optimizer == 'SGD':
+        policy_optimizer = torch.optim.SGD(policy.network.parameters(),lr=params.policy_step_size)
+        state_value_optimizer = torch.optim.SGD(state_val_func.network.parameters(),lr=-params.state_value_step_size)
+
+
     trajectory_dataset = TrajectoryDataset()
     train_rewards_perf = []
     for i in range(num_episodes):
@@ -76,7 +82,7 @@ def train(params):
                 break
         train_rewards_perf.append(train_rewards_episode)
         
-        update_policy(policy, optimizer, log_prob_action_tracker,rewards_tracker,gamma)
+        update(policy,state_val_func,policy_optimizer,state_value_optimizer,trajectory_dataset,gamma)
 
         print(f'episode={i}  episode_reward={train_rewards_episode}')
 
@@ -84,7 +90,7 @@ def train(params):
 
 
 # FIX THE METHOD SIGNATURE 
-def update_policy(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma):
+def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma):
 
     # compute rewards to go ( same way the discounted rewards are computed in REINFORCE)
     discounted_returns = []
@@ -99,8 +105,37 @@ def update_policy(policy,state_val_func,policy_optimizer,state_val_func_optimize
     discounted_returns = torch.tensor(discounted_returns)
 
     # compute advantage estimates
+    
+    # compute TD error as advantage estimate
+    advs = [] 
+    for s_index in range(len(trajectory_dataset)):
+        sample = trajectory_dataset[s_index]
+        with torch.no_grad():
+            adv = sample.r + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
+        advs.append(adv)
+    advs = torch.stack(advs)
+    # update policy by updating PPO-clip objective 
 
 
+
+    # update state_value function by MSE loss 
+    state_vals = []
+    for s_index in range(len(trajectory_dataset)):
+        sample = trajectory_dataset[s_index]
+        state_val = state_val_func.forward(sample.obs)
+        state_vals.append(state_val)
+        
+    state_vals = torch.stack(state_vals)
+    state_val_loss = F.mse_loss(state_val_loss,discounted_returns)
+
+    state_val_func_optimizer.zero_grad()
+    state_val_loss.backward()
+    state_val_func_optimizer.step()
 
     
+
+
+
+
+
     return 
