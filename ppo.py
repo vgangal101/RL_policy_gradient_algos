@@ -82,7 +82,8 @@ def train(params):
                 break
         train_rewards_perf.append(train_rewards_episode)
         
-        update(policy,state_val_func,policy_optimizer,state_value_optimizer,trajectory_dataset,gamma)
+        # needs a variable to tell what to 
+        update(policy,state_val_func,policy_optimizer,state_value_optimizer,trajectory_dataset,gamma) 
 
         print(f'episode={i}  episode_reward={train_rewards_episode}')
 
@@ -91,6 +92,8 @@ def train(params):
 
 # FIX THE METHOD SIGNATURE 
 def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma):
+
+    # WRITE OUT WHAT NEEDS TO BE DONE FOR PSEUDOCODE STEPS 6 & 7 
 
     # compute rewards to go ( same way the discounted rewards are computed in REINFORCE)
     discounted_returns = []
@@ -116,6 +119,10 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
     advs = torch.stack(advs)
     # update policy by updating PPO-clip objective 
 
+    """
+    Initial intuition for Steps 6 and 7 suggest that the idea will be very similar to what is done for 
+    supervised learning. Keep in mind as you progress
+    """
 
 
     # update state_value function by MSE loss 
@@ -131,11 +138,5 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
     state_val_func_optimizer.zero_grad()
     state_val_loss.backward()
     state_val_func_optimizer.step()
-
-    
-
-
-
-
 
     return 
