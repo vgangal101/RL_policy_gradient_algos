@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 
-experience = namedtuple('experience_sample',['obs','action','reward','next_obs','done'])
+experience = namedtuple('experience_sample',['obs','action','reward','next_obs','done','log_prob_action'])
 
 class TrajectoryDataset():
     def __init__(self):
