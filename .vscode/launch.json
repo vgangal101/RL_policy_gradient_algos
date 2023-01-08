@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Train PPO CartpoleV0",
+            "type": "python",
+            "request": "launch",
+            "program": "ppo.py",
+            "console": "integratedTerminal",
+            "args": ["--config","config/PPO_CartPoleV0.yml"],
+            "justMyCode": true
+        }
+        {
             "name": "Train ActorCritic CartpoleV1",
             "type": "python",
             "request": "launch",
