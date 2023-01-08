@@ -9,7 +9,7 @@ from state_value_function import StateValueFunction
 from torch.nn import functional as F 
 
 from ppo_utils import TrajectoryDataset, experience
-
+torch.autograd.set_detect_anomaly(True)
 
 
 def get_args():
@@ -24,12 +24,21 @@ def get_args():
     parser.add_argument('--policy_step_size',type=float)
     parser.add_argument('--state_value_step_size',type=float)
     parser.add_argument('--optimizer',default='Adam',type=str)
-    parser.add_argument('--policy_num_iterations',default=10,type=int)
-    parser.add_argument('--state_val_num_iterations',default=10,type=int)
+    parser.add_argument('--num_iterations',default=10,type=int)
     parser.add_argument('--epsilon',default=0.2,type=float)
 
     return parser.parse_args()
 
+def plot_results(training_perf):
+    
+    # plot the rewards
+    fig, ax = plt.subplots()
+    #training_perf_x = [i for i in range(len(training_perf))]
+    #evaluate_perf_x = [i for i in range(len(evaluate_perf))]
+    ax.plot(training_perf,'b',label='training rewards')
+    #ax.plot(evaluate_perf,'r',label='evaluation rewards')
+    ax.legend()
+    plt.savefig('actor_critic_rewards_over_time.png')
 
 
 
@@ -45,10 +54,11 @@ def train(params):
     num_episodes = params.num_episodes
     num_timesteps = params.num_timesteps 
     gamma = params.gamma # make it a default of 0.99 
-    step_size = params.step_size # is learning rate 
+    policy_step_size = params.policy_step_size # is learning rate 
+    state_value_step_size = params.state_value_step_size
+    num_iterations = params.num_iterations  
+    epsilon = params.epsilon
 
-    policy_num_iterations = params.policy_num_iterations
-    state_val_num_iterations = params.state_val_iterations
 
     policy_config = dict(network_name=params.network_name,obs_space=env.observation_space.shape,action_space=env.action_space.n)
     policy = Policy(policy_config)
@@ -63,6 +73,7 @@ def train(params):
         policy_optimizer = torch.optim.SGD(policy.network.parameters(),lr=params.policy_step_size)
         state_value_optimizer = torch.optim.SGD(state_val_func.network.parameters(),lr=-params.state_value_step_size)
 
+    
 
     trajectory_dataset = TrajectoryDataset()
     train_rewards_perf = []
@@ -88,7 +99,7 @@ def train(params):
         train_rewards_perf.append(train_rewards_episode)
         
         
-        update(policy,state_val_func,policy_optimizer,state_value_optimizer,trajectory_dataset,gamma) 
+        update(policy,state_val_func,policy_optimizer,state_value_optimizer,trajectory_dataset,gamma,num_iterations,epsilon) 
         trajectory_dataset.clear()
         print(f'episode={i}  episode_reward={train_rewards_episode}')
 
@@ -100,10 +111,9 @@ def train(params):
         
 
 # FIX THE METHOD SIGNATURE 
-def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma,policy_num_iterations,state_num_iterations,epsilon):
+def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma,num_iterations,epsilon):
 
-    # WRITE OUT WHAT NEEDS TO BE DONE FOR PSEUDOCODE STEPS 6 & 7 
-
+    
     # compute rewards to go ( same way the discounted rewards are computed in REINFORCE)
     discounted_returns = []
     for i in range(len(trajectory_dataset)):
@@ -122,24 +132,25 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
     Initial intuition for Steps 6 and 7 suggest that the idea will be very similar to what is done for 
     supervised learning. Keep in mind as you progress
     """
-    for iter_num in range(policy_num_iterations):
+    advs = [] 
+    for s_index in range(len(trajectory_dataset)):
+        sample = trajectory_dataset[s_index]
+        with torch.no_grad():
+            adv = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
+        advs.append(adv)
+    advs = torch.stack(advs)
+    
+    for iter_num in range(num_iterations):
         log_prob_actions = []
         curr_log_probs = []
         for s_index in range(len(trajectory_dataset)):
             sample = trajectory_dataset[s_index]
-            log_prob = policy.compute_log_prob(sample.obs,sample.action)
+            log_prob = policy.compute_log_prob_action(sample.obs,sample.action)
             curr_log_probs.append(log_prob)
             log_prob_actions.append(sample.log_prob_action)
 
         # compute advantage estimates
         # compute TD error as advantage estimate
-        advs = [] 
-        for s_index in range(len(trajectory_dataset)):
-            sample = trajectory_dataset[s_index]
-            with torch.no_grad():
-                adv = sample.r + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
-            advs.append(adv)
-        advs = torch.stack(advs)
         
         curr_log_probs = torch.stack(curr_log_probs)
         log_prob_actions = torch.stack(log_prob_actions)
@@ -152,12 +163,9 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         actor_loss = -1 * surr_final_value
         
         policy_optimizer.zero_grad()
-        actor_loss.backward()
+        actor_loss.backward(retain_graph=True)
         policy_optimizer.step()
 
-    
-    # update state_value function by MSE loss 
-    for iter_num in range(state_num_iterations):
         state_vals = []
         for s_index in range(len(trajectory_dataset)):
             sample = trajectory_dataset[s_index]
@@ -165,10 +173,22 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
             state_vals.append(state_val)
             
         state_vals = torch.stack(state_vals)
-        state_val_loss = F.mse_loss(state_val_loss,discounted_returns)
+        state_val_loss = F.mse_loss(state_vals,discounted_returns.squeeze())
 
         state_val_func_optimizer.zero_grad()
         state_val_loss.backward()
         state_val_func_optimizer.step()
 
     return 
+
+
+def main():
+    params = get_args()
+    train_rewards_perf = train(params)
+    plot_results(train_rewards_perf)
+
+
+
+
+if __name__ == '__main__':
+    main()

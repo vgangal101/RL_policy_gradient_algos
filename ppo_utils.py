@@ -11,7 +11,7 @@ class TrajectoryDataset():
     def store(self,sample):
         self.storage_container.append(sample)
     
-    def __len___(self):
+    def __len__(self):
         return len(self.storage_container)
 
     def __getitem__(self,i):

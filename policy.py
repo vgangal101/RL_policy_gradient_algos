@@ -22,6 +22,8 @@ class Policy():
             obs = torch.from_numpy(obs)
         action_probs = self.network(obs)
         action_distribution = torch.distributions.Categorical(action_probs)
+        if isinstance(action,int):
+            action = torch.tensor([action])
         log_prob_action = action_distribution.log_prob(action)
         return log_prob_action
     
