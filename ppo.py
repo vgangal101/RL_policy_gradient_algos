@@ -142,6 +142,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
             adv = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
         advs.append(adv)
     advs = torch.stack(advs).to(device)
+    #print('advs tensor type = ', advs.get_device())
 
     
     for iter_num in range(num_iterations):
@@ -160,12 +161,21 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         log_prob_actions = torch.stack(log_prob_actions).to(device)
         ratio = torch.exp(curr_log_probs - log_prob_actions).to(device)
         
+        #print('curr_log_probs tensor type = ', curr_log_probs.get_device())
+        #print('log_prob_actions = ', log_prob_actions.get_device())
+        #print('ratio=',ratio.get_device())
+        
         # surr1 = ratio * advs
         # surr2 = torch.clamp(ratio, 1 - epsilon, 1 + epsilon) * advs 
         # surr_final_value = (torch.min(surr1,surr2)).mean()
 
-        clip_adv = torch.clamp(ratio,1-epsilon,1+epsilon) * advs
-        policy_loss = -(torch.min(ratio*adv,clip_adv)).mean().to(device)
+        clip_adv = (torch.clamp(ratio,1-epsilon,1+epsilon) * advs).to(device)
+        #print('clip_adv=',clip_adv.get_device())
+        #policy_loss = -(torch.min(ratio*adv,clip_adv)).mean().to(device)
+        #part1 = 
+        #part2 = clip_adv 
+        
+        policy_loss = -(torch.min(ratio * advs,clip_adv)).mean()
 
         #actor_loss = -1 * surr_final_value
         
