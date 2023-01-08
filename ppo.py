@@ -24,7 +24,8 @@ def get_args():
     parser.add_argument('--policy_step_size',type=float)
     parser.add_argument('--state_value_step_size',type=float)
     parser.add_argument('--optimizer',default='Adam',type=str)
-    parser.add_argument('--num_iterations',default=10,type=int)
+    parser.add_argument('--policy_num_iterations',default=10,type=int)
+    parser.add_argument('--vf_num_iterations',default=10,type=int)
     parser.add_argument('--epsilon',default=0.2,type=float)
 
     return parser.parse_args()
@@ -56,7 +57,8 @@ def train(params):
     gamma = params.gamma # make it a default of 0.99 
     policy_step_size = params.policy_step_size # is learning rate 
     state_value_step_size = params.state_value_step_size
-    num_iterations = params.num_iterations  
+    policy_num_iterations = params.policy_num_iterations  
+    vf_num_iterations = params.vf_num_iterations
     epsilon = params.epsilon
 
 
@@ -99,7 +101,7 @@ def train(params):
         train_rewards_perf.append(train_rewards_episode)
         
         
-        update(policy,state_val_func,policy_optimizer,state_value_optimizer,trajectory_dataset,gamma,num_iterations,epsilon) 
+        update(policy,state_val_func,policy_optimizer,state_value_optimizer,trajectory_dataset,gamma,policy_num_iterations,vf_num_iterations,epsilon) 
         trajectory_dataset.clear()
         print(f'episode={i}  episode_reward={train_rewards_episode}')
 
@@ -111,7 +113,7 @@ def train(params):
         
 
 # FIX THE METHOD SIGNATURE 
-def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma,num_iterations,epsilon):
+def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma,policy_num_iterations,vf_num_iterations,epsilon):
 
     if torch.cuda.is_available():
         device = torch.device('cuda:0')
@@ -145,7 +147,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
     #print('advs tensor type = ', advs.get_device())
 
     
-    for iter_num in range(num_iterations):
+    for iter_num in range(policy_num_iterations):
         log_prob_actions = []
         curr_log_probs = []
         for s_index in range(len(trajectory_dataset)):
@@ -183,6 +185,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         policy_loss.backward(retain_graph=True)
         policy_optimizer.step()
 
+    for iter_num in range(vf_num_iterations):
         state_vals = []
         for s_index in range(len(trajectory_dataset)):
             sample = trajectory_dataset[s_index]
