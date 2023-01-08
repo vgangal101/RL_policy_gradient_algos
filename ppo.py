@@ -169,7 +169,6 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         policy_loss.backward(retain_graph=True)
         policy_optimizer.step()
 
-    for iter_num in range(num_iterations):
         state_vals = []
         for s_index in range(len(trajectory_dataset)):
             sample = trajectory_dataset[s_index]
