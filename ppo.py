@@ -145,8 +145,8 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         curr_log_probs = []
         for s_index in range(len(trajectory_dataset)):
             sample = trajectory_dataset[s_index]
-            log_prob = policy.compute_log_prob_action(sample.obs,sample.action)
-            curr_log_probs.append(log_prob)
+            curr_log_prob = policy.compute_log_prob_action(sample.obs,sample.action)
+            curr_log_probs.append(curr_log_prob)
             log_prob_actions.append(sample.log_prob_action)
 
         # compute advantage estimates
@@ -156,16 +156,20 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         log_prob_actions = torch.stack(log_prob_actions)
         ratio = torch.exp(curr_log_probs - log_prob_actions)
         
-        surr1 = ratio * advs
-        surr2 = torch.clamp(ratio, 1 - epsilon, 1 + epsilon) * advs 
-        surr_final_value = (torch.min(surr1,surr2)).mean()
+        # surr1 = ratio * advs
+        # surr2 = torch.clamp(ratio, 1 - epsilon, 1 + epsilon) * advs 
+        # surr_final_value = (torch.min(surr1,surr2)).mean()
 
-        actor_loss = -1 * surr_final_value
+        clip_adv = torch.clamp(ratio,1-epsilon,1+epsilon) * advs
+        policy_loss = -(torch.min(ratio*adv,clip_adv)).mean()
+
+        #actor_loss = -1 * surr_final_value
         
         policy_optimizer.zero_grad()
-        actor_loss.backward(retain_graph=True)
+        policy_loss.backward()
         policy_optimizer.step()
 
+    for iter_num in range(num_iterations):
         state_vals = []
         for s_index in range(len(trajectory_dataset)):
             sample = trajectory_dataset[s_index]
