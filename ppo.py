@@ -127,7 +127,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         discounted_returns.append(Gt)
 
     
-    discounted_returns = torch.tensor(discounted_returns).device(device)
+    discounted_returns = torch.tensor(discounted_returns).to(device)
 
     # update policy by updating PPO-clip objective 
 
@@ -141,7 +141,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         with torch.no_grad():
             adv = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
         advs.append(adv)
-    advs = torch.stack(advs).device(device)
+    advs = torch.stack(advs).to(device)
 
     
     for iter_num in range(num_iterations):
@@ -156,16 +156,16 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         # compute advantage estimates
         # compute TD error as advantage estimate
         
-        curr_log_probs = torch.stack(curr_log_probs).device(device)
-        log_prob_actions = torch.stack(log_prob_actions).device(device)
-        ratio = torch.exp(curr_log_probs - log_prob_actions).device(device)
+        curr_log_probs = torch.stack(curr_log_probs).to(device)
+        log_prob_actions = torch.stack(log_prob_actions).to(device)
+        ratio = torch.exp(curr_log_probs - log_prob_actions).to(device)
         
         # surr1 = ratio * advs
         # surr2 = torch.clamp(ratio, 1 - epsilon, 1 + epsilon) * advs 
         # surr_final_value = (torch.min(surr1,surr2)).mean()
 
         clip_adv = torch.clamp(ratio,1-epsilon,1+epsilon) * advs
-        policy_loss = -(torch.min(ratio*adv,clip_adv)).mean().device(device)
+        policy_loss = -(torch.min(ratio*adv,clip_adv)).mean().to(device)
 
         #actor_loss = -1 * surr_final_value
         
@@ -179,7 +179,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
             state_val = state_val_func.forward(sample.obs)
             state_vals.append(state_val)
             
-        state_vals = torch.stack(state_vals).device(device)
+        state_vals = torch.stack(state_vals).to(device)
         state_val_loss = F.mse_loss(state_vals.squeeze(),discounted_returns)
 
         state_val_func_optimizer.zero_grad()
