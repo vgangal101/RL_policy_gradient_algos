@@ -38,7 +38,7 @@ def plot_results(training_perf):
     ax.plot(training_perf,'b',label='training rewards')
     #ax.plot(evaluate_perf,'r',label='evaluation rewards')
     ax.legend()
-    plt.savefig('actor_critic_rewards_over_time.png')
+    plt.savefig('ppo_clip_rewards_over_time.png')
 
 
 
