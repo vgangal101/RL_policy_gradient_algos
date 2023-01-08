@@ -87,7 +87,7 @@ def train(params):
             action, log_prob_action = policy.select_action(obs)
             #log_prob_action_tracker.append(log_prob_action)
             next_obs, reward, done, info = env.step(action)
-            sample = experience(obs,action,reward,next_obs,done,log_prob_action)
+            sample = experience(obs,action,reward,next_obs,done,log_prob_action.item())
             trajectory_dataset.store(sample)
             obs = next_obs
             
@@ -147,7 +147,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
             sample = trajectory_dataset[s_index]
             curr_log_prob = policy.compute_log_prob_action(sample.obs,sample.action)
             curr_log_probs.append(curr_log_prob)
-            log_prob_actions.append(sample.log_prob_action)
+            log_prob_actions.append(torch.tensor([sample.log_prob_action]))
 
         # compute advantage estimates
         # compute TD error as advantage estimate
@@ -166,7 +166,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
         #actor_loss = -1 * surr_final_value
         
         policy_optimizer.zero_grad()
-        policy_loss.backward()
+        policy_loss.backward(retain_graph=True)
         policy_optimizer.step()
 
     for iter_num in range(num_iterations):
@@ -177,7 +177,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
             state_vals.append(state_val)
             
         state_vals = torch.stack(state_vals)
-        state_val_loss = F.mse_loss(state_vals,discounted_returns.squeeze())
+        state_val_loss = F.mse_loss(state_vals.squeeze(),discounted_returns)
 
         state_val_func_optimizer.zero_grad()
         state_val_loss.backward()
