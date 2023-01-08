@@ -190,7 +190,8 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
             state_vals.append(state_val)
             
         state_vals = torch.stack(state_vals).to(device)
-        state_val_loss = F.mse_loss(state_vals.squeeze(),discounted_returns)
+        state_val_loss = F.mse_loss(state_vals.squeeze(),discounted_returns).to(device)
+        
 
         state_val_func_optimizer.zero_grad()
         state_val_loss.backward()
