@@ -114,9 +114,9 @@ def compute_GAE(trajectory_dataset,state_val_func,lambda_gae,gamma):
     gae_values = []
     for s_index in reversed(range(len(trajectory_dataset))):
         sample = trajectory_dataset[s_index]
-        with torch.no_grad:
+        with torch.no_grad():
             delta = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
-        gae = delta + gamma * lambda_gae * gae 
+            gae = delta + gamma * lambda_gae * gae 
         gae_values.append(gae)
     return torch.tensor(list(reversed(gae_values)))
 
@@ -157,7 +157,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
     # #print('advs tensor type = ', advs.get_device())
 
     # GAE computation 
-    advs = compute_GAE(trajectory_dataset,state_val_func,gae_lambda,gamma)
+    advs = compute_GAE(trajectory_dataset,state_val_func,gae_lambda,gamma).to(device)
 
     
     for iter_num in range(num_iterations):
