@@ -107,8 +107,17 @@ def train(params):
 
 
 
+def compute_GAE(trajectory_dataset,state_val_func,lambda_gae,gamma):
+    gae = 0 
+    gae_values = []
+    for s_index in reversed(range(len(trajectory_dataset))):
+        sample = trajectory_dataset[s_index]
+        delta = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
+        gae = delta + gamma * lambda_gae * gae 
+        gae_values.append(gae)
+    return torch.tensor(list(reversed(gae_values)))
 
-        
+
 
 # FIX THE METHOD SIGNATURE 
 def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma,num_iterations,epsilon):
@@ -135,14 +144,17 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
     Initial intuition for Steps 6 and 7 suggest that the idea will be very similar to what is done for 
     supervised learning. Keep in mind as you progress
     """
-    advs = [] 
-    for s_index in range(len(trajectory_dataset)):
-        sample = trajectory_dataset[s_index]
-        with torch.no_grad():
-            adv = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
-        advs.append(adv)
-    advs = torch.stack(advs).to(device)
-    #print('advs tensor type = ', advs.get_device())
+    # advs = [] 
+    # for s_index in range(len(trajectory_dataset)):
+    #     sample = trajectory_dataset[s_index]
+    #     with torch.no_grad():
+    #         adv = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
+    #     advs.append(adv)
+    # advs = torch.stack(advs).to(device)
+    # #print('advs tensor type = ', advs.get_device())
+
+    # GAE computation 
+    advs = compute_GAE(trajectory_dataset,state_val_func)
 
     
     for iter_num in range(num_iterations):
