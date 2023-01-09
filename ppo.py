@@ -101,7 +101,7 @@ def train(params):
         train_rewards_perf.append(train_rewards_episode)
         
         
-        update(policy,state_val_func,policy_optimizer,state_value_optimizer,trajectory_dataset,gamma,num_iterations,epsilon) 
+        update(policy,state_val_func,policy_optimizer,state_value_optimizer,trajectory_dataset,gamma,num_iterations,epsilon,gae_lambda) 
         trajectory_dataset.clear()
         print(f'episode={i}  episode_reward={train_rewards_episode}')
 
