@@ -26,6 +26,7 @@ def get_args():
     parser.add_argument('--optimizer',default='Adam',type=str)
     parser.add_argument('--num_iterations',default=10,type=int)
     parser.add_argument('--epsilon',default=0.2,type=float)
+    parser.add_argument('--gae_lambda',default=0.95,type=float)
 
     return parser.parse_args()
 
@@ -58,6 +59,7 @@ def train(params):
     state_value_step_size = params.state_value_step_size
     num_iterations = params.num_iterations  
     epsilon = params.epsilon
+    gae_lambda = params.gae_lambda
 
 
     policy_config = dict(network_name=params.network_name,obs_space=env.observation_space.shape,action_space=env.action_space.n)
@@ -112,7 +114,8 @@ def compute_GAE(trajectory_dataset,state_val_func,lambda_gae,gamma):
     gae_values = []
     for s_index in reversed(range(len(trajectory_dataset))):
         sample = trajectory_dataset[s_index]
-        delta = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
+        with torch.no_grad:
+            delta = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
         gae = delta + gamma * lambda_gae * gae 
         gae_values.append(gae)
     return torch.tensor(list(reversed(gae_values)))
@@ -120,7 +123,7 @@ def compute_GAE(trajectory_dataset,state_val_func,lambda_gae,gamma):
 
 
 # FIX THE METHOD SIGNATURE 
-def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma,num_iterations,epsilon):
+def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma,num_iterations,epsilon,gae_lambda):
 
     if torch.cuda.is_available():
         device = torch.device('cuda:0')
@@ -154,7 +157,7 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
     # #print('advs tensor type = ', advs.get_device())
 
     # GAE computation 
-    advs = compute_GAE(trajectory_dataset,state_val_func)
+    advs = compute_GAE(trajectory_dataset,state_val_func,gae_lambda,gamma)
 
     
     for iter_num in range(num_iterations):
