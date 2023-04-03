@@ -112,7 +112,7 @@ def update_policy(policy,optimizer,log_prob_action_tracker,rewards_tracker,gamma
     #policy_loss = -1 * log_prob_action_tracker * discounted_returns
     policy_loss = []
     for index, log_prob_action in enumerate(log_prob_action_tracker):
-        policy_loss.append(-1 * log_prob_action * discounted_returns[index])
+        policy_loss.append(-1 * log_prob_action * discounted_returns[index]) # negative one -- for stochastic gradient ascent not descent 
 
     policy_loss = torch.stack(policy_loss)
     cumulative_policy_loss = policy_loss.sum()

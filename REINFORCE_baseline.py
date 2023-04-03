@@ -58,7 +58,7 @@ def train(params):
     num_timesteps = params.num_timesteps 
     gamma = params.gamma # make it a default of 0.99 
     #step_size = params.step_size # is learning rate 
-    # ***** DO THE STEP_SIZE FOR THE STATE_VALUE FUNCTION AND POLICY NEED TO BE DIFFERENT ???
+    # ***** DO THE STEP_SIZE FOR THE STATE_VALUE FUNCTION AND POLICY NEED TO BE DIFFERENT ??? NOT NECESSARILY
 
 
 
