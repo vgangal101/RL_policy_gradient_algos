@@ -115,6 +115,8 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
 
     if torch.cuda.is_available():
         device = torch.device('cuda:0')
+    else: 
+        device = torch.device('cpu')
 
     # compute rewards to go ( same way the discounted rewards are computed in REINFORCE)
     discounted_returns = []
