@@ -110,8 +110,28 @@ def train(params):
 
 
 def compute_GAE(trajectory_dataset,state_val_func,lambda_gae,gamma):
-    # TODO
-    pass 
+    
+    # compute td error in advance
+    delta_vals = [] 
+    for s_index in range(len(trajectory_dataset)):
+        sample = trajectory_dataset[s_index]
+        with torch.no_grad():
+            delta = sample.reward + gamma * state_val_func.forward(sample.next_obs) - state_val_func.forward(sample.obs)
+        delta_vals.append(delta.item())
+    #delta = torch.stack(delta)
+    
+
+    advs = []
+    for s_index in range(delta_vals):
+        l = 0 
+        gae_val = 0 
+        for t in range(s_index,len(delta_vals)):
+            current_delta_val = delta_vals[t]
+            gae_val += ((lambda_gae * gamma) ** l) *  current_delta_val
+            l += 1 
+        advs.append(gae_val)
+
+    return torch.tensor(advs) 
 
 # FIX THE METHOD SIGNATURE 
 def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,trajectory_dataset,gamma,num_iterations,epsilon,gae_lambda):
@@ -160,21 +180,12 @@ def update(policy,state_val_func,policy_optimizer,state_val_func_optimizer,traje
             curr_log_probs.append(curr_log_prob)
             log_prob_actions.append(torch.tensor([sample.log_prob_action]))
 
-        # compute advantage estimates
-        # compute TD error as advantage estimate
         
         curr_log_probs = torch.stack(curr_log_probs).to(device)
         log_prob_actions = torch.stack(log_prob_actions).to(device)
         ratio = torch.exp(curr_log_probs - log_prob_actions).to(device)
         
-        #print('curr_log_probs tensor type = ', curr_log_probs.get_device())
-        #print('log_prob_actions = ', log_prob_actions.get_device())
-        #print('ratio=',ratio.get_device())
         
-        # surr1 = ratio * advs
-        # surr2 = torch.clamp(ratio, 1 - epsilon, 1 + epsilon) * advs 
-        # surr_final_value = (torch.min(surr1,surr2)).mean()
-
         clip_adv = (torch.clamp(ratio,1-epsilon,1+epsilon) * advs).to(device)
         #print('clip_adv=',clip_adv.get_device())
         #policy_loss = -(torch.min(ratio*adv,clip_adv)).mean().to(device)
